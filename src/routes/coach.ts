@@ -25,7 +25,10 @@ router.get("/students", async (_req, res) => {
 router.get("/attempts", async (req, res) => {
   try {
     const raw = typeof req.query.studentId === "string" ? req.query.studentId : "";
-    const studentId = raw === "" || raw === "all" ? undefined : normalizeStudentId(raw);
+    const studentId =
+      raw === "" || raw === "all"
+        ? undefined
+        : normalizeStudentId(raw) ?? undefined;
     if (raw && raw !== "all" && !studentId) {
       res.status(400).json({ error: "Invalid studentId." });
       return;
@@ -41,7 +44,10 @@ router.get("/attempts", async (req, res) => {
 router.get("/analytics", async (req, res) => {
   try {
     const raw = typeof req.query.studentId === "string" ? req.query.studentId : "";
-    const studentId = raw === "" || raw === "all" ? undefined : normalizeStudentId(raw);
+    const studentId =
+      raw === "" || raw === "all"
+        ? undefined
+        : normalizeStudentId(raw) ?? undefined;
     if (raw && raw !== "all" && !studentId) {
       res.status(400).json({ error: "Invalid studentId." });
       return;
