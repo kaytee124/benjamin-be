@@ -8,5 +8,9 @@ services:
     envVars:
       - key: CORS_ORIGIN
         sync: false
+      - key: DATABASE_URL
+        sync: false
+      - key: COACH_PASSCODE
+        sync: false
       - key: NODE_VERSION
         value: "20"

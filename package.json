@@ -11,17 +11,23 @@
     "dev": "tsx watch src/index.ts",
     "build": "tsc",
     "start": "node dist/index.js",
-    "start:dev": "tsx src/index.ts"
+    "start:dev": "tsx src/index.ts",
+    "sim:four": "tsx scripts/simulate-four-students.ts",
+    "sim:anxious": "tsx scripts/simulate-anxious-student.ts",
+    "verify:flags": "tsx scripts/verify-flag-rules.ts"
   },
   "dependencies": {
     "cors": "^2.8.5",
+    "dotenv": "^17.4.2",
     "express": "^4.21.2",
+    "pg": "^8.23.0",
     "typescript": "^5.7.2"
   },
   "devDependencies": {
     "@types/cors": "^2.8.17",
     "@types/express": "^4.17.21",
     "@types/node": "^20.17.0",
+    "@types/pg": "^8.23.1",
     "tsx": "^4.19.2"
   }
 }
