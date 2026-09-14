@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { SUBJECTS } from "../lib/constants";
 import { getMathQuestions, toPublicQuestion } from "../data/math-questions";
-import { persistAttempt } from "../lib/db";
+import { listAttempts, persistAttempt } from "../lib/db";
 import { answersMatch, practiceBandFromPercentage } from "../lib/scoring";
 import {
   createMathSession,
@@ -65,6 +65,27 @@ router.get("/subjects/math/sessions/:id", async (req, res) => {
   } catch (err) {
     console.error("Failed to load session", err);
     res.status(500).json({ error: "Failed to load test session." });
+  }
+});
+
+/** Past scored attempts for one practice ID (no passcode — student-facing). */
+router.get("/subjects/math/attempts", async (req, res) => {
+  const studentId = normalizeStudentId(
+    typeof req.query.studentId === "string" ? req.query.studentId : undefined
+  );
+  if (!studentId) {
+    res.status(400).json({
+      error: "studentId query required (practice name or ID).",
+    });
+    return;
+  }
+
+  try {
+    const attempts = await listAttempts(studentId);
+    res.json({ studentId, attempts });
+  } catch (err) {
+    console.error("Failed to list attempts", err);
+    res.status(500).json({ error: "Failed to load test history." });
   }
 });
 

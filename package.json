@@ -14,7 +14,9 @@
     "start:dev": "tsx src/index.ts",
     "sim:four": "tsx scripts/simulate-four-students.ts",
     "sim:anxious": "tsx scripts/simulate-anxious-student.ts",
-    "verify:flags": "tsx scripts/verify-flag-rules.ts"
+    "verify:flags": "tsx scripts/verify-flag-rules.ts",
+    "verify:figures": "tsx scripts/verify-figures.ts",
+    "verify:ged": "tsx scripts/verify-ged-scope.ts"
   },
   "dependencies": {
     "cors": "^2.8.5",
