@@ -1,3 +1,9 @@
+/**
+ * GED Mathematical Reasoning scope only (HSE): arithmetic, basic algebra,
+ * formula-sheet geometry, tables/graphs, simple probability.
+ * No Algebra II / college topics (no compound interest, quadratic formula,
+ * logs, or trig beyond right triangles).
+ */
 import {
   fingerprintOf,
   gcd,
@@ -327,16 +333,19 @@ const templates: QuestionTemplate[] = [
     allowNoCalc: false,
     allowCalc: true,
     generate: (rng) => {
-      const triples = [
+      // Prefer common GED triples; larger triples appear less often.
+      const common = [
         [3, 4, 5],
         [5, 12, 13],
         [6, 8, 10],
+      ];
+      const rare = [
         [7, 24, 25],
         [8, 15, 17],
         [9, 12, 15],
       ];
-      const [a, b, c] = pick(rng, triples);
-      const scale = randInt(rng, 1, 3);
+      const [a, b, c] = pick(rng, rng() < 0.75 ? common : rare);
+      const scale = rng() < 0.8 ? 1 : randInt(rng, 2, 3);
       const A = a * scale;
       const B = b * scale;
       const C = c * scale;
@@ -344,7 +353,7 @@ const templates: QuestionTemplate[] = [
       return {
         type: "multiple_choice",
         topic: "geometry",
-        prompt: `A right triangle has legs ${A} and ${B} as shown. What is the length of the hypotenuse?`,
+        prompt: `A right triangle has legs ${A} and ${B} as shown. Use the Pythagorean theorem (a² + b² = c²). What is the length of the hypotenuse?`,
         options: uniqueOptions(rng, correct, [
           String(A + B),
           String(C + 2),
@@ -906,7 +915,7 @@ const templates: QuestionTemplate[] = [
       return {
         type: "multiple_choice",
         topic: "surface-area",
-        prompt: `What is the surface area of a cube with edge length ${edge}?`,
+        prompt: `What is the surface area of a cube with edge length ${edge}? Use SA = 6e².`,
         options: uniqueOptions(rng, correct, [
           String(edge * edge),
           String(edge * edge * edge),
@@ -931,7 +940,7 @@ const templates: QuestionTemplate[] = [
       return {
         type: "short_answer",
         topic: "surface-area",
-        prompt: `A rectangular prism has length ${l}, width ${w}, and height ${h}. What is its surface area?`,
+        prompt: `A rectangular prism has length ${l}, width ${w}, and height ${h}. What is its surface area? Use SA = 2(lw + lh + wh).`,
         correctAnswer: correct,
         explanation: `SA = 2(lw+lh+wh) = 2(${l * w}+${l * h}+${w * h}) = ${sa}.`,
       };
@@ -943,14 +952,14 @@ const templates: QuestionTemplate[] = [
     allowNoCalc: false,
     allowCalc: true,
     generate: (rng) => {
-      const r = randInt(rng, 2, 8);
-      const h = randInt(rng, 4, 15);
+      const r = randInt(rng, 2, 6);
+      const h = randInt(rng, 4, 10);
       const v = Math.round(3.14 * r * r * h);
       const correct = String(v);
       return {
         type: "multiple_choice",
         topic: "geometry",
-        prompt: `A cylinder has radius ${r} and height ${h}. Approximate the volume using π = 3.14. Round to the nearest whole number.`,
+        prompt: `A cylinder has radius ${r} and height ${h}. Approximate the volume using V = πr²h and π = 3.14. Round to the nearest whole number.`,
         options: uniqueOptions(rng, correct, [
           String(Math.round(2 * 3.14 * r * h)),
           String(r * r * h),
@@ -967,15 +976,15 @@ const templates: QuestionTemplate[] = [
     allowNoCalc: false,
     allowCalc: true,
     generate: (rng) => {
-      const r = randInt(rng, 2, 7);
-      const h = randInt(rng, 3, 12);
+      const r = randInt(rng, 2, 5);
+      const h = randInt(rng, 3, 10);
       // SA = 2πr² + 2πrh
       const sa = Math.round(2 * 3.14 * r * r + 2 * 3.14 * r * h);
       const correct = String(sa);
       return {
         type: "short_answer",
         topic: "surface-area",
-        prompt: `A cylinder has radius ${r} and height ${h}. Approximate the total surface area using π = 3.14. Round to the nearest whole number.`,
+        prompt: `A cylinder has radius ${r} and height ${h}. Approximate the total surface area using SA = 2πr² + 2πrh and π = 3.14. Round to the nearest whole number.`,
         correctAnswer: correct,
         explanation: `SA ≈ 2πr² + 2πrh ≈ ${sa}.`,
       };
@@ -1009,7 +1018,7 @@ const templates: QuestionTemplate[] = [
   },
   {
     id: "quadratic-roots-simple",
-    topic: "quadratics",
+    topic: "roots",
     allowNoCalc: false,
     allowCalc: true,
     generate: (rng) => {
@@ -1017,7 +1026,7 @@ const templates: QuestionTemplate[] = [
       const correct = String(r);
       return {
         type: "short_answer",
-        topic: "quadratics",
+        topic: "roots",
         prompt: `Solve for the positive value of x: x² = ${r * r}.`,
         correctAnswer: correct,
         explanation: `x = ±${r}; the positive solution is ${r}.`,
@@ -1250,7 +1259,7 @@ const templates: QuestionTemplate[] = [
     allowNoCalc: false,
     allowCalc: true,
     generate: (rng) => {
-      const r = pick(rng, [3, 6, 9]);
+      const r = pick(rng, [3, 4, 5]);
       // V = 4/3 π r^3 with π=3.14
       const v = Math.round((4 / 3) * 3.14 * r * r * r);
       const correct = String(v);
@@ -1514,31 +1523,6 @@ const templates: QuestionTemplate[] = [
     },
   },
   {
-    id: "compound-interest",
-    topic: "finance",
-    allowNoCalc: false,
-    allowCalc: true,
-    generate: (rng) => {
-      const p = pick(rng, [500, 800, 1000, 1200]);
-      const rPct = pick(rng, [5, 6, 8, 10]);
-      const t = pick(rng, [2, 3]);
-      const amount = Math.round(p * Math.pow(1 + rPct / 100, t));
-      const correct = String(amount);
-      return {
-        type: "multiple_choice",
-        topic: "finance",
-        prompt: `$${p} is invested at ${rPct}% annual compound interest for ${t} years. About how much is it worth at the end? (Round to the nearest dollar.)`,
-        options: uniqueOptions(rng, correct, [
-          String(Math.round(p * (1 + (rPct / 100) * t))),
-          String(amount + 50),
-          String(p + rPct * t),
-        ]),
-        correctAnswer: correct,
-        explanation: `A = ${p}(1+${rPct}/100)^${t} ≈ ${amount}.`,
-      };
-    },
-  },
-  {
     id: "two-way-table",
     topic: "data",
     allowNoCalc: true,
@@ -1584,7 +1568,7 @@ const templates: QuestionTemplate[] = [
       const median = q1 + randInt(rng, 2, 5);
       const q3 = median + randInt(rng, 2, 5);
       const max = q3 + randInt(rng, 2, 6);
-      const ask = pick(rng, ["median", "iqr"] as const);
+      const ask = rng() < 0.7 ? ("median" as const) : ("iqr" as const);
       const correct =
         ask === "median" ? String(median) : String(q3 - q1);
       return {
@@ -1593,7 +1577,7 @@ const templates: QuestionTemplate[] = [
         prompt:
           ask === "median"
             ? "According to the box plot, what is the median?"
-            : "According to the box plot, what is the interquartile range (IQR)?",
+            : "The interquartile range (IQR) is Q3 − Q1. According to the box plot, what is the IQR?",
         options: uniqueOptions(rng, correct, [
           String(ask === "median" ? q1 : median),
           String(ask === "median" ? q3 : max - min),
@@ -1702,7 +1686,7 @@ const templates: QuestionTemplate[] = [
       return {
         type: "multiple_choice",
         topic: "geometry",
-        prompt: `A trapezoid has bases ${b1} and ${b2} and height ${h}. What is its area?`,
+        prompt: `A trapezoid has bases ${b1} and ${b2} and height ${h}. What is its area? Use A = ½(b₁ + b₂)h.`,
         options: uniqueOptions(rng, correct, [
           String(b1 + b2 + h),
           String(b1 * b2 * h),
@@ -1719,14 +1703,14 @@ const templates: QuestionTemplate[] = [
     allowNoCalc: false,
     allowCalc: true,
     generate: (rng) => {
-      const r = randInt(rng, 3, 8);
-      const h = randInt(rng, 4, 12);
+      const r = randInt(rng, 3, 5);
+      const h = randInt(rng, 4, 9);
       const v = Math.round((1 / 3) * 3.14 * r * r * h);
       const correct = String(v);
       return {
         type: "multiple_choice",
         topic: "geometry",
-        prompt: `A cone has radius ${r} and height ${h}. Using π ≈ 3.14, what is its volume to the nearest whole number?`,
+        prompt: `A cone has radius ${r} and height ${h}. Using V = (1/3)πr²h and π ≈ 3.14, what is its volume to the nearest whole number?`,
         options: uniqueOptions(rng, correct, [
           String(Math.round(3.14 * r * r * h)),
           String(Math.round(3.14 * r * r)),

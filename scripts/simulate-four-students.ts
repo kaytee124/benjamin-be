@@ -52,7 +52,6 @@ const BASE_SKILLS: Record<string, number> = {
   graphs: 0.76,
   functions: 0.8,
   inequalities: 0.78,
-  quadratics: 0.76,
   angles: 0.8,
   geometry: 0.82,
   "surface-area": 0.8,
@@ -95,7 +94,7 @@ const PERSONAS: Persona[] = [
     skills: withWeak(["algebra", "graphs"], 0.4, {
       functions: 0.55,
       inequalities: 0.52,
-      quadratics: 0.48,
+      roots: 0.5,
     }),
     defaultSkill: 0.8,
   },
@@ -292,6 +291,7 @@ function catalogAudit(): {
     "No pixel/photo figure assets (SVG diagrams only — intentional)",
     "No cone surface-area / pyramid volume beyond cone volume",
     "No conditional probability beyond independent with-replacement",
+    "Finance uses simple interest only (GED-typical; no compound)",
   ];
   return {
     ok: hasGraphs && hasPythagorean && hasLineFromGraph && hasDecimals,

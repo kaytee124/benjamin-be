@@ -28,7 +28,7 @@ const TOPIC_TRUE_SKILL: Record<string, number> = {
   graphs: 0.55,
   functions: 0.68,
   inequalities: 0.6,
-  quadratics: 0.57,
+  roots: 0.57,
   angles: 0.62,
   geometry: 0.78,
   "surface-area": 0.76,
@@ -103,7 +103,7 @@ function main() {
 
   const flagged = analytics.filter((t) => t.flagged);
   // Focus report on primary struggle areas for this persona
-  const focusWeak = ["algebra", "graphs", "angles", "quadratics", "inequalities"];
+  const focusWeak = ["algebra", "graphs", "angles", "roots", "inequalities"];
 
   console.log("=== Simulated student: anxious GED starter ===");
   console.log(

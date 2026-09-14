@@ -30,9 +30,8 @@ export function domainForTopic(topic: string): MathDomain {
     "graphs",
     "functions",
     "inequalities",
-    "quadratics",
   ]);
-  // decimals, fractions, geometry, data, etc. default to quantitative
+  // decimals, fractions, geometry, roots, data, etc. default to quantitative
   return algebraic.has(topic) ? "algebraic" : "quantitative";
 }
 
