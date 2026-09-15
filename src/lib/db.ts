@@ -63,10 +63,16 @@ export interface PersistAttemptInput {
   review: QuestionReview[];
 }
 
+export interface AttemptDetail {
+  attempt: AttemptSummary;
+  review: QuestionReview[];
+}
+
 /** In-memory history so local/dev and tests work without Postgres. */
 interface MemoryBundle {
   attempts: AttemptSummary[];
   items: TopicItemRow[];
+  reviews: Map<string, QuestionReview[]>;
 }
 
 const memoryByStudent = new Map<string, MemoryBundle>();
@@ -74,7 +80,7 @@ const memoryByStudent = new Map<string, MemoryBundle>();
 function memBundle(studentId: string): MemoryBundle {
   let b = memoryByStudent.get(studentId);
   if (!b) {
-    b = { attempts: [], items: [] };
+    b = { attempts: [], items: [], reviews: new Map() };
     memoryByStudent.set(studentId, b);
   }
   return b;
@@ -99,6 +105,7 @@ function recordMemoryAttempt(
     percentage: input.percentage,
     practiceBand: input.practiceBand,
   });
+  bundle.reviews.set(attemptId, input.review);
   for (const item of input.review) {
     if (!item.topic) continue;
     bundle.items.unshift({
@@ -175,6 +182,8 @@ export async function ensureSchema(): Promise<void> {
           ALTER COLUMN student_id SET DEFAULT 'default';
         ALTER TABLE attempts
           ALTER COLUMN student_id SET NOT NULL;
+        ALTER TABLE attempts
+          ADD COLUMN IF NOT EXISTS review_json JSONB;
       `);
 
       console.log("Database schema ready");
@@ -203,8 +212,8 @@ export async function persistAttempt(
     await client.query("BEGIN");
     await client.query(
       `INSERT INTO attempts
-        (id, student_id, started_at, submitted_at, correct, total, percentage, practice_band)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
+        (id, student_id, started_at, submitted_at, correct, total, percentage, practice_band, review_json)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9::jsonb)`,
       [
         id,
         input.studentId,
@@ -214,6 +223,7 @@ export async function persistAttempt(
         input.total,
         input.percentage,
         input.practiceBand,
+        JSON.stringify(input.review),
       ]
     );
 
@@ -306,6 +316,75 @@ export async function listAttempts(
       new Date(b.submittedAt).getTime() - new Date(a.submittedAt).getTime()
   );
   return merged;
+}
+
+/** One attempt with full question review for the owning student. */
+export async function getAttempt(
+  studentId: string,
+  attemptId: string
+): Promise<AttemptDetail | null> {
+  const mem = memoryByStudent.get(studentId);
+  const memAttempt = mem?.attempts.find((a) => a.id === attemptId);
+  const memReview = mem?.reviews.get(attemptId);
+
+  const db = getPool();
+  if (!db) {
+    if (!memAttempt) return null;
+    return { attempt: memAttempt, review: memReview ?? [] };
+  }
+
+  await ensureSchema();
+  const result = await db.query<{
+    id: string;
+    student_id: string;
+    started_at: Date | null;
+    submitted_at: Date;
+    correct: number;
+    total: number;
+    percentage: number;
+    practice_band: string;
+    review_json: QuestionReview[] | null;
+  }>(
+    `SELECT id, student_id, started_at, submitted_at, correct, total, percentage,
+            practice_band, review_json
+     FROM attempts
+     WHERE id = $1 AND student_id = $2`,
+    [attemptId, studentId]
+  );
+
+  const row = result.rows[0];
+  if (row) {
+    let review: QuestionReview[] = [];
+    const raw = row.review_json as QuestionReview[] | string | null;
+    if (Array.isArray(raw)) {
+      review = raw;
+    } else if (typeof raw === "string" && raw.trim()) {
+      try {
+        const parsed = JSON.parse(raw) as unknown;
+        if (Array.isArray(parsed)) review = parsed as QuestionReview[];
+      } catch {
+        review = [];
+      }
+    }
+    return {
+      attempt: {
+        id: row.id,
+        studentId: row.student_id,
+        startedAt: row.started_at ? row.started_at.toISOString() : null,
+        submittedAt: row.submitted_at.toISOString(),
+        correct: row.correct,
+        total: row.total,
+        percentage: row.percentage,
+        practiceBand: row.practice_band,
+      },
+      review,
+    };
+  }
+
+  if (memAttempt) {
+    return { attempt: memAttempt, review: memReview ?? [] };
+  }
+  return null;
 }
 
 export async function listTopicItems(

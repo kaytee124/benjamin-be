@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { SUBJECTS } from "../lib/constants";
 import { getMathQuestions, toPublicQuestion } from "../data/math-questions";
-import { listAttempts, persistAttempt } from "../lib/db";
+import { getAttempt, listAttempts, persistAttempt } from "../lib/db";
 import { answersMatch, practiceBandFromPercentage } from "../lib/scoring";
 import {
   createMathSession,
@@ -89,6 +89,46 @@ router.get("/subjects/math/attempts", async (req, res) => {
   }
 });
 
+/** One past attempt with question review (student-owned). */
+router.get("/subjects/math/attempts/:id", async (req, res) => {
+  const studentId = normalizeStudentId(
+    typeof req.query.studentId === "string" ? req.query.studentId : undefined
+  );
+  if (!studentId) {
+    res.status(400).json({
+      error: "studentId query required (practice name or ID).",
+    });
+    return;
+  }
+
+  const attemptId = req.params.id?.trim();
+  if (!attemptId) {
+    res.status(400).json({ error: "attempt id required." });
+    return;
+  }
+
+  try {
+    const detail = await getAttempt(studentId, attemptId);
+    if (!detail) {
+      res.status(404).json({ error: "Attempt not found." });
+      return;
+    }
+    res.json({
+      attempt: detail.attempt,
+      score: {
+        correct: detail.attempt.correct,
+        total: detail.attempt.total,
+        percentage: detail.attempt.percentage,
+      },
+      practiceBand: detail.attempt.practiceBand,
+      review: detail.review,
+    });
+  } catch (err) {
+    console.error("Failed to load attempt", err);
+    res.status(500).json({ error: "Failed to load attempt review." });
+  }
+});
+
 router.post("/subjects/math/submit", async (req, res) => {
   const body = req.body as SubmitRequest;
 
@@ -171,6 +211,7 @@ router.post("/subjects/math/submit", async (req, res) => {
       review,
     });
     if (attemptId) {
+      response.attemptId = attemptId;
       console.log(
         `Persisted attempt ${attemptId} for student ${studentId} session ${body.sessionId}`
       );

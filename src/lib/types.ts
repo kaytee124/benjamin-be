@@ -63,4 +63,6 @@ export interface SubmitResponse {
   };
   practiceBand: PracticeBand;
   review: QuestionReview[];
+  /** Persisted attempt id when history write succeeds. */
+  attemptId?: string;
 }
