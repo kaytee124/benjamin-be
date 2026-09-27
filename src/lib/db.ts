@@ -9,6 +9,35 @@ export function isDbConfigured(): boolean {
   return Boolean(process.env.DATABASE_URL?.trim());
 }
 
+export type DbHealth = {
+  configured: boolean;
+  connected: boolean;
+  error?: string;
+};
+
+/** Ping Postgres when configured. Used by GET /health. */
+export async function checkDbHealth(timeoutMs = 2500): Promise<DbHealth> {
+  if (!isDbConfigured()) {
+    return { configured: false, connected: false };
+  }
+  const db = getPool();
+  if (!db) {
+    return { configured: true, connected: false, error: "pool unavailable" };
+  }
+  try {
+    await Promise.race([
+      db.query("SELECT 1"),
+      new Promise<never>((_, reject) => {
+        setTimeout(() => reject(new Error("database ping timed out")), timeoutMs);
+      }),
+    ]);
+    return { configured: true, connected: true };
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "database ping failed";
+    return { configured: true, connected: false, error: message };
+  }
+}
+
 export function getPool(): Pool | null {
   if (!isDbConfigured()) return null;
   if (!pool) {

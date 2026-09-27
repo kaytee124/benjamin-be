@@ -1,7 +1,7 @@
 import "dotenv/config";
 import cors from "cors";
 import express from "express";
-import { ensureSchema, isDbConfigured } from "./lib/db";
+import { checkDbHealth, ensureSchema, isDbConfigured } from "./lib/db";
 import { ensureSessionSchema } from "./lib/sessions";
 import apiRouter from "./routes/api";
 import coachRouter from "./routes/coach";
@@ -34,13 +34,22 @@ app.use(
 );
 app.use(express.json({ limit: "1mb" }));
 
-app.get("/health", (_req, res) => {
-  res.json({
-    ok: true,
-    database: isDbConfigured(),
+async function healthHandler(
+  _req: express.Request,
+  res: express.Response
+): Promise<void> {
+  const database = await checkDbHealth();
+  const ok = !database.configured || database.connected;
+  res.status(ok ? 200 : 503).json({
+    ok,
+    status: ok ? "healthy" : "degraded",
+    database,
     coachConfigured: Boolean(process.env.COACH_PASSCODE?.trim()),
   });
-});
+}
+
+app.get("/health", healthHandler);
+app.get("/api/health", healthHandler);
 
 app.use("/api", apiRouter);
 app.use("/api/coach", coachRouter);
