@@ -23,6 +23,21 @@ export const WEAK_TOPIC_CAP = 5;
 export const ABSOLUTE_TEMPLATE_CAP = 6;
 export const WEAKNESS_ATTEMPT_THRESHOLD = 8;
 
+/** Extra weight for parallel-line angle items on this calendar day only. */
+const ANGLE_BOOST_TEMPLATE = "transversal-parallel";
+const ANGLE_BOOST_DAY = "2026-10-13";
+const ANGLE_BOOST_WEIGHT = 8;
+
+function isAngleBoostDay(now = new Date()): boolean {
+  const day = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "America/New_York",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(now);
+  return day === ANGLE_BOOST_DAY;
+}
+
 export interface TopicWeaknessInfo {
   topic: string;
   /** 0–1 accuracy; lower = weaker */
@@ -79,8 +94,12 @@ export function buildMathForm(options?: BuildMathFormOptions): BuiltForm {
   const formTemplateCounts = new Map<string, number>();
   let quantCount = 0;
   let algebraCount = 0;
+  const angleBoostToday = isAngleBoostDay();
 
   function templateCap(t: QuestionTemplate): number {
+    if (angleBoostToday && t.id === ANGLE_BOOST_TEMPLATE) {
+      return ABSOLUTE_TEMPLATE_CAP;
+    }
     const boost = weakBoost.get(t.topic);
     if (boost) return Math.min(ABSOLUTE_TEMPLATE_CAP, WEAK_TOPIC_CAP);
     return Math.min(ABSOLUTE_TEMPLATE_CAP, BASE_TEMPLATE_CAP);
@@ -118,6 +137,7 @@ export function buildMathForm(options?: BuildMathFormOptions): BuiltForm {
       let w = 1 / (1 + times);
       const boost = weakBoost.get(t.topic);
       if (boost) w *= boost;
+      if (angleBoostToday && t.id === ANGLE_BOOST_TEMPLATE) w *= ANGLE_BOOST_WEIGHT;
       // Slight preference toward domain still needing slots
       if (preferDomain && resolveDomain(t) === preferDomain) w *= 1.15;
       totalWeight += w;

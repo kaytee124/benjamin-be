@@ -1629,19 +1629,23 @@ const templates: QuestionTemplate[] = [
     generate: (rng) => {
       const marked = pick(rng, [55, 60, 65, 70, 75, 110, 115, 120]);
       // corresponding / alternate interior equal when parallels
+      const alternate = rng() < 0.5;
+      const relation = alternate ? "alternate interior angle" : "corresponding angle";
       const correct = String(marked);
       return {
         type: "multiple_choice",
         topic: "angles",
         prompt:
-          "Lines ℓ₁ and ℓ₂ are parallel, cut by a transversal. The marked angle is shown. What is the measure of the angle marked “?” (corresponding angle)?",
+          `Lines ℓ₁ and ℓ₂ are parallel, cut by a transversal. The marked angle is shown. What is the measure of the angle marked “?” (${relation})?`,
         options: uniqueOptions(rng, correct, [
           String(180 - marked),
           String(90),
           String(marked + 10),
         ]),
         correctAnswer: correct,
-        explanation: `Corresponding angles formed by a transversal of parallel lines are congruent (${marked}°).`,
+        explanation: alternate
+          ? `Alternate interior angles formed by a transversal of parallel lines are congruent (${marked}°).`
+          : `Corresponding angles formed by a transversal of parallel lines are congruent (${marked}°).`,
         figureSvg: transversalSvg({ markedAngle: marked }),
       };
     },
